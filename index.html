@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>魔法海螺</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --bg-grad: linear-gradient(145deg, #f5f5f7 0%, #ffffff 50%, #fafafa 100%);
+        --card: #ffffff;
+        --text: #1d1d1f;
+        --sub-text: #86868b;
+        --accent: #1d1d1f;
+        --border: #d2d2d7;
+        --shadow: 0 4px 20px rgba(0,0,0,0.06);
+        --hover-shadow: 0 8px 30px rgba(0,0,0,0.10);
+      }
+      html, body { height: 100%; margin: 0; overflow: hidden; }
+      body {
+        display: flex; align-items: center; justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+        background: var(--bg-grad);
+        color: var(--text);
+        position: relative;
+      }
+
+      /* 装饰性背景元素 */
+      body::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: 
+          radial-gradient(ellipse 80% 50% at 20% 80%, rgba(120, 120, 130, 0.03) 0%, transparent 60%),
+          radial-gradient(ellipse 60% 40% at 85% 15%, rgba(100, 100, 110, 0.03) 0%, transparent 55%),
+          radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
+        pointer-events: none;
+      }
+
+      .card {
+        width: min(650px, 95vw);
+        padding: 50px 30px;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* 魔法海螺本体 */
+      .conch-wrapper {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        margin: 0 auto 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 90px;
+        cursor: pointer;
+        user-select: none;
+        z-index: 10;
+        transition: transform 0.3s ease;
+      }
+      .conch {
+        animation: float 6s ease-in-out infinite;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+        transition: transform 0.3s ease;
+      }
+      .conch-wrapper:hover .conch {
+        transform: scale(1.1) rotate(10deg);
+      }
+
+      /* 等待动画：螺旋扩散 */
+      .spiral {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 0; height: 0;
+        border: 2px solid rgba(0,0,0,0.1);
+        border-radius: 50%;
+        opacity: 0;
+        pointer-events: none;
+        z-index: -1;
+      }
+      .thinking .spiral {
+        animation: spiralEffect 2s linear infinite;
+      }
+      .thinking .spiral:nth-child(1) { animation-delay: 0s; }
+      .thinking .spiral:nth-child(2) { animation-delay: 0.5s; }
+      .thinking .spiral:nth-child(3) { animation-delay: 1s; }
+      
+      /* 海螺思考时的振动（像被吹响） */
+      .thinking .conch {
+        animation: vibrate 0.4s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+      }
+      @keyframes vibrate {
+        0%, 100% { transform: rotate(-3deg) scale(1.02); }
+        25% { transform: rotate(2deg) scale(0.98); }
+        50% { transform: rotate(-2deg) scale(1.01); }
+        75% { transform: rotate(3deg) scale(0.99); }
+      }
+      @keyframes spiralEffect {
+        0% { width: 80px; height: 80px; opacity: 0.6; border-width: 3px; transform: translate(-50%, -50%); }
+        100% { width: 280px; height: 280px; opacity: 0; border-width: 1px; transform: translate(-50%, -50%); }
+      }
+
+      h1 {
+        font-weight: 500;
+        letter-spacing: 8px;
+        margin-bottom: 44px;
+        font-size: 1.5rem;
+        color: var(--text);
+        text-shadow: 0 1px 1px rgba(255,255,255,0.8);
+        background: linear-gradient(135deg, #1d1d1f 0%, #424245 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      /* 输入区域 - 雅致风格 */
+      .input-group {
+        position: relative;
+        margin-bottom: 36px;
+        max-width: 420px;
+        margin-left: auto;
+        margin-right: auto;
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+      }
+      .input-group.hidden {
+        opacity: 0;
+        transform: translateY(-10px);
+        pointer-events: none;
+      }
+      
+      .input-wrapper {
+        position: relative;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 2px;
+        box-shadow: 
+          0 1px 3px rgba(0, 0, 0, 0.04),
+          0 4px 12px rgba(0, 0, 0, 0.03),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+      
+      .input-wrapper::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 16px;
+        padding: 1.5px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(200, 200, 200, 0.3) 50%,
+          rgba(255, 255, 255, 0.6) 100%
+        );
+        -webkit-mask: 
+          linear-gradient(#fff 0 0) content-box, 
+          linear-gradient(#fff 0 0);
+        mask: 
+          linear-gradient(#fff 0 0) content-box, 
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        opacity: 1;
+        transition: opacity 0.4s ease;
+      }
+      
+      .input-wrapper:focus-within {
+        box-shadow: 
+          0 2px 8px rgba(0, 0, 0, 0.06),
+          0 8px 24px rgba(0, 0, 0, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 1);
+        transform: translateY(-2px);
+      }
+      
+      .input-wrapper:focus-within::before {
+        background: linear-gradient(
+          135deg,
+          rgba(100, 100, 100, 0.4) 0%,
+          rgba(150, 150, 150, 0.2) 50%,
+          rgba(100, 100, 100, 0.3) 100%
+        );
+      }
+      
+      .input-inner {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: rgba(250, 250, 252, 0.95);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      
+      .input-icon {
+        position: absolute;
+        left: 20px;
+        color: #a0a0a0;
+        font-size: 1.1rem;
+        transition: all 0.4s ease;
+        pointer-events: none;
+      }
+      
+      .input-wrapper:focus-within .input-icon {
+        color: #505050;
+        transform: scale(1.05);
+      }
+      
+      input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: var(--text);
+        font-size: 1.1rem;
+        padding: 18px 24px 18px 52px;
+        outline: none;
+        transition: all 0.4s ease;
+        font-weight: 400;
+        letter-spacing: 0.5px;
+        font-family: inherit;
+      }
+      
+      input::placeholder {
+        color: #b0b0b0;
+        font-weight: 300;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+      }
+      
+      input:focus::placeholder {
+        color: #c8c8c8;
+        letter-spacing: 2px;
+      }
+      
+      /* 输入框底部光晕效果 */
+      .input-glow {
+        position: absolute;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 20px;
+        background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.04) 0%, transparent 70%);
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+      }
+      
+      .input-wrapper:focus-within + .input-glow {
+        opacity: 1;
+      }
+
+      /* 答案区域 */
+      .answer-box {
+        min-height: 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        color: var(--accent);
+        font-weight: 600;
+        opacity: 0;
+        letter-spacing: 2px;
+        transform: translateY(15px);
+        transition: all 0.8s ease;
+      }
+      .answer-box.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .status-text {
+        font-size: 0.9rem;
+        color: var(--sub-text);
+        margin-top: 12px;
+        font-weight: 400;
+        letter-spacing: 3px;
+        height: 24px;
+      }
+      
+      .foot {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.75rem;
+        color: var(--sub-text);
+        letter-spacing: 3px;
+        opacity: 0.7;
+        font-weight: 400;
+      }
+      
+      .foot a {
+        color: var(--sub-text);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-bottom: 1px solid transparent;
+      }
+      
+      .foot a:hover {
+        color: var(--text);
+        border-bottom-color: var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="conch-wrapper" id="conch-wrapper">
+        <div class="spiral"></div>
+        <div class="spiral"></div>
+        <div class="spiral"></div>
+        <div class="conch">🐚</div>
+      </div>
+      
+      <h1>魔法海螺</h1>
+      
+      <div class="input-group">
+        <div class="input-wrapper">
+          <div class="input-inner">
+            <span class="input-icon">✦</span>
+            <input id="q" type="text" placeholder="问出问题 敲动海螺" autocomplete="off" autofocus />
+          </div>
+        </div>
+        <div class="input-glow"></div>
+      </div>
+      
+      <div id="answer" class="answer-box">
+         <div id="answer-text"></div>
+      </div>
+      
+      <div class="foot"><a href="https://blog.qaqan.cn" target="_blank" rel="noopener">我的博客</a></div>
+    </main>
+
+    <script>
+      // ========== 配置区 ==========
+      // 替换为你部署的 Cloudflare Worker API 地址
+      const API_BASE = 'empty-sun-0d62.1901382573.workers.dev'
+      // ============================
+
+      const $q = document.getElementById('q')
+      const $inputGroup = document.querySelector('.input-group')
+      const $ansBox = document.getElementById('answer')
+      const $ansText = document.getElementById('answer-text')
+      const $wrapper = document.getElementById('conch-wrapper')
+      
+      let isAsking = false
+
+      async function ask(question) {
+        if (isAsking) return
+        isAsking = true
+        
+        // 进入等待状态
+        $ansBox.classList.remove('show')
+        $wrapper.classList.add('thinking')
+        $inputGroup.classList.add('hidden')
+        $q.disabled = true
+        
+        try {
+          // 最小等待时间，保证动画能被看到
+          const minWait = new Promise(r => setTimeout(r, 1500))
+          
+          const fetchPromise = fetch(`${API_BASE}/ask`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ q: question })
+          })
+          
+          const [_, res] = await Promise.all([minWait, fetchPromise])
+          
+          if (!res.ok) throw new Error('虚空无响应')
+          const data = await res.json()
+          
+          showAnswer(data.answer ?? '沉默')
+        } catch (e) {
+          console.error('API 调用失败:', e)
+          showAnswer('迷雾遮蔽了视线...')
+        } finally {
+          $wrapper.classList.remove('thinking')
+          $q.disabled = false
+          $q.focus()
+          isAsking = false
+        }
+      }
+
+      let typeTimer = null
+      function showAnswer(text) {
+        // 清除之前的打字动画
+        if (typeTimer) {
+          clearInterval(typeTimer)
+          typeTimer = null
+        }
+        $ansText.textContent = ''
+        $ansBox.classList.add('show')
+        
+        // 打字机效果：逐字显示
+        let i = 0
+        const chars = [...text] // 支持 emoji 等多字节字符
+        typeTimer = setInterval(() => {
+          if (i < chars.length) {
+            $ansText.textContent += chars[i]
+            i++
+          } else {
+            clearInterval(typeTimer)
+            typeTimer = null
+            // 打字完成，输入框缓缓浮现
+            setTimeout(() => {
+              $inputGroup.classList.remove('hidden')
+            }, 1000)
+          }
+        }, 80) // 每字 80ms
+      }
+
+      const MAX_DAILY_ASKS = 5
+      
+      function getTodayKey() {
+        return new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+      }
+      
+      function getAskCount() {
+        try {
+          const data = JSON.parse(localStorage.getItem('conch_limit') || '{}')
+          if (data.date === getTodayKey()) return data.count || 0
+          return 0
+        } catch { return 0 }
+      }
+      
+      function incrementAskCount() {
+        const today = getTodayKey()
+        const count = getAskCount() + 1
+        localStorage.setItem('conch_limit', JSON.stringify({ date: today, count }))
+      }
+      
+      function getRemainingAsks() {
+        return Math.max(0, MAX_DAILY_ASKS - getAskCount())
+      }
+
+      function handleAsk() {
+        const v = $q.value.trim()
+        if (!v) {
+          $q.focus()
+          $q.style.borderBottomColor = '#999';
+          setTimeout(() => $q.style.borderBottomColor = '', 300);
+          return
+        }
+        
+        // 检查每日限制
+        if (getRemainingAsks() <= 0) {
+          showAnswer('魔法海螺累了！')
+          return
+        }
+        
+        incrementAskCount()
+        ask(v)
+      }
+
+      $q.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleAsk()
+      })
+
+      $wrapper.addEventListener('click', handleAsk)
+    </script>
+  </body>
+</html>
