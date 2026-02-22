@@ -346,7 +346,7 @@
     <script>
       // ========== 配置区 ==========
       // 替换为你部署的 Cloudflare Worker API 地址
-      const API_BASE = 'empty-sun-0d62.1901382573.workers.dev'
+      const API_BASE = 'https://empty-sun-0d62.1901382573.workers.dev'
       // ============================
 
       const $q = document.getElementById('q')
@@ -371,7 +371,12 @@
           // 最小等待时间，保证动画能被看到
           const minWait = new Promise(r => setTimeout(r, 1500))
           
-          const fetchPromise = fetch(`${API_BASE}/ask`, {
+          const apiUrl = `${API_BASE}/ask`
+          console.log('[DEBUG] 请求 URL:', apiUrl)
+          console.log('[DEBUG] 请求问题:', question)
+          console.log('[DEBUG] 当前页面 Origin:', window.location.origin)
+          
+          const fetchPromise = fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ q: question })
@@ -379,13 +384,30 @@
           
           const [_, res] = await Promise.all([minWait, fetchPromise])
           
-          if (!res.ok) throw new Error('虚空无响应')
+          console.log('[DEBUG] 响应状态:', res.status, res.statusText)
+          console.log('[DEBUG] 响应头:', Object.fromEntries(res.headers.entries()))
+          
+          if (!res.ok) {
+            const errorText = await res.text()
+            console.error('[DEBUG] 响应错误内容:', errorText)
+            throw new Error(`HTTP ${res.status}: ${errorText}`)
+          }
+          
           const data = await res.json()
+          console.log('[DEBUG] 响应数据:', data)
           
           showAnswer(data.answer ?? '沉默')
         } catch (e) {
-          console.error('API 调用失败:', e)
-          showAnswer('迷雾遮蔽了视线...')
+          console.error('[DEBUG] 错误类型:', e.name)
+          console.error('[DEBUG] 错误消息:', e.message)
+          console.error('[DEBUG] 完整错误:', e)
+          
+          // 显示更具体的错误信息（调试模式）
+          if (e.message.includes('Failed to fetch') || e.name === 'TypeError') {
+            showAnswer('[调试] 网络错误或CORS问题，检查控制台')
+          } else {
+            showAnswer(`[调试] ${e.message}`)
+          }
         } finally {
           $wrapper.classList.remove('thinking')
           $q.disabled = false
